@@ -1,0 +1,11 @@
+node_modules
+dist
+client/node_modules
+server/node_modules
+.git
+*.dmg
+*.zip
+*.blockmap
+electron
+electron-builder.yml
+bolofy-round.webp

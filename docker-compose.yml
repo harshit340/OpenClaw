@@ -1,0 +1,13 @@
+services:
+  bolofy:
+    build: .
+    ports:
+      - "8891:8891"
+    volumes:
+      - ./config.json:/app/config.json
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - PORT=8891
+      - GATEWAY_HOST=host.docker.internal
+    restart: unless-stopped

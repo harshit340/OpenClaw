@@ -1,0 +1,30 @@
+appId: com.bolofy.agent
+productName: Bolofy
+directories:
+  output: dist
+files:
+  - electron/**/*
+  - server/**/*
+  - client/dist/**/*
+  - config.json
+  - config.json.example
+  - resources/**/*
+  - package.json
+asarUnpack:
+  - server/**/*
+  - node_modules/**/*
+mac:
+  category: public.app-category.productivity
+  icon: resources/icon.png
+  target:
+    - dmg
+    - zip
+win:
+  icon: resources/icon.png
+  target:
+    - nsis
+linux:
+  icon: resources/icon.png
+  target:
+    - AppImage
+    - deb

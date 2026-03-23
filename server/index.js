@@ -654,6 +654,50 @@ const runOpenclawJs = (args) => new Promise((resolve, reject) => {
   proc.on("error", reject);
 });
 
+// Search ClawHub registry
+app.get("/api/skills/search", async (req, res) => {
+  const { q } = req.query;
+  if (!q || !q.trim()) return res.json({ ok: true, results: [] });
+  try {
+    const raw = await runOpenclawJs(["skills", "search", q.trim(), "--json"]);
+    const data = JSON.parse(raw);
+    res.json({ ok: true, results: data.results || data || [] });
+  } catch (err) {
+    console.error("[skills/search] error:", err.message?.slice(0, 300));
+    res.status(500).json({ ok: false, error: err.message?.slice(0, 200) });
+  }
+});
+
+// Install a skill from ClawHub
+app.post("/api/skills/install", async (req, res) => {
+  const { skillName } = req.body;
+  if (!skillName) return res.status(400).json({ ok: false, error: "skillName required" });
+  try {
+    const raw = await runOpenclawJs(["skills", "install", skillName]);
+    console.log("[skills/install] installed:", skillName);
+    res.json({ ok: true, message: `${skillName} installed successfully` });
+  } catch (err) {
+    console.error("[skills/install] error:", err.message?.slice(0, 300));
+    res.status(500).json({ ok: false, error: err.message?.slice(0, 300) });
+  }
+});
+
+// Update a skill
+app.post("/api/skills/update", async (req, res) => {
+  const { skillName } = req.body;
+  if (!skillName) return res.status(400).json({ ok: false, error: "skillName required" });
+  try {
+    const raw = await runOpenclawJs(["skills", "update", skillName]);
+    console.log("[skills/update] updated:", skillName);
+    res.json({ ok: true, message: `${skillName} updated successfully` });
+  } catch (err) {
+    console.error("[skills/update] error:", err.message?.slice(0, 300));
+    res.status(500).json({ ok: false, error: err.message?.slice(0, 300) });
+  }
+});
+
+
+
 // Get all skills with status
 app.get("/api/skills", async (req, res) => {
   try {

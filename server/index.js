@@ -632,4 +632,96 @@ function startListening() {
   });
 }
 
+
+// Skills adding Part
+
+// --- Skills Management ---
+
+const getOpenclawJs = () => path.join(
+  os.homedir(), "AppData", "Roaming", "npm", "node_modules", "openclaw", "dist", "index.js"
+);
+
+const runOpenclawJs = (args) => new Promise((resolve, reject) => {
+  const { spawn } = require("child_process");
+  const proc = spawn(process.execPath, [getOpenclawJs(), ...args], {
+    shell: false,
+    env: { ...process.env, NO_COLOR: "1" }
+  });
+  let stdout = "", stderr = "";
+  proc.stdout.on("data", d => { stdout += d.toString(); });
+  proc.stderr.on("data", d => { stderr += d.toString(); });
+  proc.on("close", code => code === 0 ? resolve(stdout) : reject(new Error(stderr || stdout)));
+  proc.on("error", reject);
+});
+
+// Get all skills with status
+app.get("/api/skills", async (req, res) => {
+  try {
+    const raw = await runOpenclawJs(["skills", "list", "--json"]);
+    const data = JSON.parse(raw);
+
+    // Read disabled list from openclaw.json
+    let disabledSkills = [];
+    try {
+      const ocPath = path.join(os.homedir(), ".openclaw", "openclaw.json");
+      const config = JSON.parse(fs.readFileSync(ocPath, "utf-8"));
+      disabledSkills = config.skills?.disabled || [];
+    } catch {}
+
+    const skills = (data.skills || []).map(s => ({
+      name: s.name,
+      description: s.description,
+      emoji: s.emoji || "🔧",
+      eligible: s.eligible,
+      disabled: disabledSkills.includes(s.name),
+      missing: s.missing,
+      homepage: s.homepage || null,
+      source: s.source,
+    }));
+
+    res.json({ ok: true, skills });
+  } catch (err) {
+    console.error("[skills] error:", err.message?.slice(0, 300));
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Enable a skill (remove from disabled list)
+app.post("/api/skills/enable", (req, res) => {
+  const { skillName } = req.body;
+  if (!skillName) return res.status(400).json({ ok: false, error: "skillName required" });
+  try {
+    const ocPath = path.join(os.homedir(), ".openclaw", "openclaw.json");
+    const config = JSON.parse(fs.readFileSync(ocPath, "utf-8"));
+    if (!config.skills) config.skills = {};
+    if (!config.skills.disabled) config.skills.disabled = [];
+    config.skills.disabled = config.skills.disabled.filter(s => s !== skillName);
+    fs.writeFileSync(ocPath, JSON.stringify(config, null, 2));
+    console.log("[skills] enabled:", skillName);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Disable a skill (add to disabled list)
+app.post("/api/skills/disable", (req, res) => {
+  const { skillName } = req.body;
+  if (!skillName) return res.status(400).json({ ok: false, error: "skillName required" });
+  try {
+    const ocPath = path.join(os.homedir(), ".openclaw", "openclaw.json");
+    const config = JSON.parse(fs.readFileSync(ocPath, "utf-8"));
+    if (!config.skills) config.skills = {};
+    if (!config.skills.disabled) config.skills.disabled = [];
+    if (!config.skills.disabled.includes(skillName)) {
+      config.skills.disabled.push(skillName);
+    }
+    fs.writeFileSync(ocPath, JSON.stringify(config, null, 2));
+    console.log("[skills] disabled:", skillName);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 startListening();

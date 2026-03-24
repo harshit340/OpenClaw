@@ -645,12 +645,18 @@ const runOpenclawJs = (args) => new Promise((resolve, reject) => {
   const { spawn } = require("child_process");
   const proc = spawn(process.execPath, [getOpenclawJs(), ...args], {
     shell: false,
-    env: { ...process.env, NO_COLOR: "1" }
+    env: { ...process.env, NO_COLOR: "1", CI: "1" }
   });
   let stdout = "", stderr = "";
   proc.stdout.on("data", d => { stdout += d.toString(); });
   proc.stderr.on("data", d => { stderr += d.toString(); });
-  proc.on("close", code => code === 0 ? resolve(stdout) : reject(new Error(stderr || stdout)));
+  proc.on("close", (code) => {
+    // Use whichever has content — openclaw writes to stderr on some versions
+    const output = stdout || stderr;
+    console.log("[openclaw] code:", code, "| stdout len:", stdout.length, "| stderr len:", stderr.length);
+    if (code === 0) resolve(output);
+    else reject(new Error(stderr || stdout));
+  });
   proc.on("error", reject);
 });
 
@@ -660,8 +666,13 @@ app.get("/api/skills/search", async (req, res) => {
   if (!q || !q.trim()) return res.json({ ok: true, results: [] });
   try {
     const raw = await runOpenclawJs(["skills", "search", q.trim(), "--json"]);
-    const data = JSON.parse(raw);
-    res.json({ ok: true, results: data.results || data || [] });
+
+    // Strip banner before JSON
+    const jsonStart = raw.search(/[\[{]/);
+    if (jsonStart === -1) return res.json({ ok: true, results: [] });
+    const data = JSON.parse(raw.slice(jsonStart));
+    const results = data.results || data.skills || (Array.isArray(data) ? data : []);
+    res.json({ ok: true, results });
   } catch (err) {
     console.error("[skills/search] error:", err.message?.slice(0, 300));
     res.status(500).json({ ok: false, error: err.message?.slice(0, 200) });
@@ -702,9 +713,12 @@ app.post("/api/skills/update", async (req, res) => {
 app.get("/api/skills", async (req, res) => {
   try {
     const raw = await runOpenclawJs(["skills", "list", "--json"]);
-    const data = JSON.parse(raw);
+    console.log("[skills] raw output:", raw.slice(0, 300));
 
-    // Read disabled list from openclaw.json
+    const jsonStart = raw.search(/[\[{]/);
+    if (jsonStart === -1) throw new Error("No JSON found in output: " + raw.slice(0, 200));
+    const data = JSON.parse(raw.slice(jsonStart));;
+
     let disabledSkills = [];
     try {
       const ocPath = path.join(os.homedir(), ".openclaw", "openclaw.json");

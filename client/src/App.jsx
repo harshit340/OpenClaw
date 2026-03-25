@@ -7,21 +7,24 @@ export default function App() {
   const [config, setConfig] = useState(null);
   const [step, setStep] = useState("loading"); // loading | import | test | chat
 
-  const fetchConfig = async () => {
-    try {
-      const res = await fetch("/api/config");
-      const data = await res.json();
-      if (data.loaded) {
-        setConfig(data);
-        setStep("test");
-      } else {
-        setStep("import");
-      }
-    } catch (err) {
-      console.error("Failed to fetch config:", err);
+  const API_BASE = "http://localhost:8891";
+
+const fetchConfig = async () => {
+  try {
+    const res = await fetch(`${API_BASE}/api/config`);
+    const data = await res.json();
+
+    if (data.loaded) {
+      setConfig(data);
+      setStep("test");
+    } else {
       setStep("import");
     }
-  };
+  } catch (err) {
+    console.error("Failed to fetch config:", err);
+    setStep("import");
+  }
+};
 
   useEffect(() => {
     fetchConfig();

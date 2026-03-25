@@ -1,6 +1,5 @@
-const { contextBridge, ipcRenderer } = require("electron");
+const { contextBridge } = require("electron");
 
 contextBridge.exposeInMainWorld("electronAPI", {
-  pickFile: () => ipcRenderer.invoke("pick-file"),
   platform: process.platform,
 });

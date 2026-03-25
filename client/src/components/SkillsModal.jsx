@@ -60,7 +60,7 @@ export default function SkillsModal({ isOpen, onClose }) {
   const fetchSkills = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/skills");
+      const res = await fetch("http://localhost:8891/api/skills");
       const data = await res.json();
       if (data.ok) setSkills(data.skills || []);
       else showToast("Failed to load skills", "error");

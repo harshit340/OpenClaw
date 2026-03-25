@@ -1,127 +1,162 @@
-const { app, BrowserWindow, dialog, ipcMain } = require("electron");
+const { app, BrowserWindow, shell } = require("electron");
 const path = require("path");
-const { spawn } = require("child_process");
+const { fork } = require("child_process");
 const http = require("http");
 
-let mainWindow;
-let serverProcess;
-
-const isDev = !app.isPackaged;
+let mainWindow = null;
+let serverProcess = null;
 const SERVER_PORT = 8891;
 
-app.setName("Bolofy");
+function startExpressServer() {
+  return new Promise((resolve) => {
+    const serverPath = path.join(__dirname, "../server/index.js");
+    console.log("[electron] forking server at:", serverPath);
 
-function startServer() {
-  // In packaged app, server is in app.asar.unpacked; in dev, it's relative
-  let serverPath = path.join(__dirname, "..", "server", "index.js");
-  if (!isDev) {
-    serverPath = serverPath.replace("app.asar", "app.asar.unpacked");
-  }
+    serverProcess = fork(serverPath, [], {
+      env: { ...process.env, PORT: String(SERVER_PORT) },
+      stdio: "pipe",
+    });
 
-  serverProcess = spawn(process.execPath, [serverPath], {
-    env: {
-      ...process.env,
-      PORT: SERVER_PORT,
-      ELECTRON_RUN_AS_NODE: "1",
-      NODE_PATH: path.join(__dirname, "..", "node_modules"),
-    },
-    stdio: ["pipe", "pipe", "pipe"],
-  });
+    serverProcess.stdout?.on("data", (data) => {
+      const msg = data.toString().trim();
+      console.log("[server]", msg);
+      if (msg.includes(`running on port ${SERVER_PORT}`)) {
+        console.log("[electron] server started signal received ✓");
+        resolve();
+      }
+    });
 
-  serverProcess.stdout.on("data", (data) => {
-    console.log(`[server] ${data.toString().trim()}`);
-  });
+    serverProcess.stderr?.on("data", (data) => {
+      console.error("[server error]", data.toString().trim());
+    });
 
-  serverProcess.stderr.on("data", (data) => {
-    console.error(`[server] ${data.toString().trim()}`);
-  });
+    serverProcess.on("error", (err) => {
+      console.error("[server fork error]", err.message);
+      resolve();
+    });
 
-  serverProcess.on("close", (code) => {
-    console.log(`Server exited with code ${code}`);
+    serverProcess.on("exit", (code) => {
+      console.log("[server] process exited with code:", code);
+    });
+
+    setTimeout(() => {
+      console.log("[electron] server start timeout — proceeding anyway");
+      resolve();
+    }, 8000);
   });
 }
 
-function waitForServer(retries = 30) {
+function waitForServer(port, maxWaitMs = 15000) {
   return new Promise((resolve, reject) => {
-    const check = (attempt) => {
-      http
-        .get(`http://127.0.0.1:${SERVER_PORT}/api/health`, (res) => {
-          if (res.statusCode === 200) resolve();
-          else if (attempt < retries) setTimeout(() => check(attempt + 1), 500);
-          else reject(new Error("Server health check failed"));
-        })
-        .on("error", () => {
-          if (attempt < retries) setTimeout(() => check(attempt + 1), 500);
-          else reject(new Error("Server not reachable"));
+    const start = Date.now();
+    console.log(`[electron] polling http://localhost:${port}/api/health ...`);
+
+    const interval = setInterval(() => {
+      const req = http.get(`http://localhost:${port}/api/health`, (res) => {
+        if (res.statusCode < 500) {
+          clearInterval(interval);
+          console.log("[electron] server health check passed ✓");
+          resolve();
+        }
+      });
+
+      req.on("error", () => {
+        if (Date.now() - start > maxWaitMs) {
+          clearInterval(interval);
+          reject(new Error(`Server did not respond within ${maxWaitMs}ms`));
+        }
+      });
+
+      req.setTimeout(1000, () => {
+        req.destroy();
+        if (Date.now() - start > maxWaitMs) {
+          clearInterval(interval);
+          reject(new Error("Server poll timed out"));
+        }
+      });
+    }, 500);
+  });
+}
+
+async function findVitePort() {
+  const ports = [5173, 5174, 5175];
+  const maxWait = 30000;
+  const start = Date.now();
+
+  console.log("[electron] waiting for Vite to start...");
+
+  while (Date.now() - start < maxWait) {
+    for (const port of ports) {
+      const ok = await new Promise((resolve) => {
+        const req = http.get(`http://localhost:${port}`, (res) => {
+          resolve(res.statusCode < 500);
         });
-    };
-    check(0);
-  });
+        req.on("error", () => resolve(false));
+        req.setTimeout(500, () => { req.destroy(); resolve(false); });
+      });
+
+      if (ok) {
+        console.log("[electron] found Vite on port:", port);
+        return port;
+      }
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+
+  console.log("[electron] Vite not found after 30s, defaulting to 5173");
+  return 5173;
 }
 
-function createWindow() {
+async function createWindow(vitePort) {
   mainWindow = new BrowserWindow({
-    width: 1280,
+    width: 1200,
     height: 800,
-    minWidth: 900,
+    minWidth: 800,
     minHeight: 600,
-    title: "Bolofy",
-    icon: path.join(__dirname, "..", "resources", "icon.png"),
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-      contextIsolation: true,
       nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.js"),
     },
+    show: false,
   });
 
-  // Show loading screen first
-  mainWindow.loadFile(path.join(__dirname, "loading.html"));
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: "deny" };
+  });
 
-  return mainWindow;
-}
+  mainWindow.once("ready-to-show", () => {
+    mainWindow.show();
+  });
 
-async function loadApp() {
+  const isDev = !app.isPackaged;
+
   if (isDev) {
-    mainWindow.loadURL("http://localhost:5174");
+    console.log("[electron] loading Vite at port:", vitePort);
+    mainWindow.loadURL(`http://localhost:${vitePort}`);
+    mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, "..", "client", "dist", "index.html"));
+    mainWindow.loadURL(`http://localhost:${SERVER_PORT}`);
   }
 }
-
-ipcMain.handle("pick-file", async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
-    title: "Select config.json",
-    filters: [{ name: "JSON", extensions: ["json"] }],
-    properties: ["openFile"],
-  });
-  if (result.canceled || result.filePaths.length === 0) return null;
-  const fs = require("fs");
-  const content = fs.readFileSync(result.filePaths[0], "utf-8");
-  return JSON.parse(content);
-});
 
 app.whenReady().then(async () => {
-  // Set dock icon on macOS
-  if (process.platform === "darwin" && app.dock) {
-    app.dock.setIcon(path.join(__dirname, "..", "resources", "icon.png"));
-  }
+  const [vitePort] = await Promise.all([
+    findVitePort(),
+    startExpressServer().then(async () => {
+      try {
+        await waitForServer(SERVER_PORT, 15000);
+      } catch (err) {
+        console.error("[electron] WARNING: server may not be ready:", err.message);
+      }
+    }),
+  ]);
 
-  createWindow();
-  startServer();
-
-  try {
-    await waitForServer();
-    console.log("Server is ready");
-    await loadApp();
-  } catch (err) {
-    console.error("Failed to start server:", err);
-    dialog.showErrorBox("Startup Error", "Failed to start the backend server.");
-  }
+  await createWindow(vitePort);
 
   app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
+    if (BrowserWindow.getAllWindows().length === 0) createWindow(vitePort);
   });
 });
 
@@ -129,7 +164,7 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
 
-app.on("before-quit", () => {
+app.on("quit", () => {
   if (serverProcess) {
     serverProcess.kill();
     serverProcess = null;

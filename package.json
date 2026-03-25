@@ -5,23 +5,50 @@
   "description": "Bolofy Desktop App — OpenClaw powered AI chat",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "concurrently --kill-others \"cd server && node index.js\" \"cd client && npm run dev\" \"sleep 3 && electron .\"",
-    "build:client": "cd client && npm run build",
+    "dev": "concurrently --kill-others --names \"VITE,ELECTRON\" \"cd client && npm run dev\" \"electron .\"",
     "build": "npm run build:client",
     "start": "npm run build:client && node server/index.js",
     "package": "npm run build && electron-builder",
     "postinstall": "cd server && npm install && cd ../client && npm install"
   },
-  "author": "Bolofy",
   "dependencies": {
     "axios": "^1.7.9",
-    "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "ws": "^8.19.0"
   },
   "devDependencies": {
-    "electron": "^33.3.1",
-    "electron-builder": "^25.1.8"
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "wait-on": "^9.0.4"
+  },
+  "build": {
+    "appId": "com.bolofy.app",
+    "productName": "Bolofy",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "electron/**/*",
+      "server/**/*",
+      "server/node_modules/**/*",
+      "client/dist/**/*",
+      "package.json"
+    ],
+    "extraResources": [],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    }
   }
 }

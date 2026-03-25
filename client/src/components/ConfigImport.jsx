@@ -4,12 +4,12 @@ export default function ConfigImport({ onImported }) {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState(null);
   const [importing, setImporting] = useState(false);
-
+  const API_BASE = "http://localhost:8891";
   const importConfig = async (config) => {
     setImporting(true);
     setError(null);
     try {
-      const res = await fetch("/api/config/import", {
+      const res = await fetch(`${API_BASE}/api/config/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),
@@ -70,9 +70,8 @@ export default function ConfigImport({ onImported }) {
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-2xl p-12 transition-colors ${
-            dragging ? "border-black bg-gray-50" : "border-gray-300"
-          }`}
+          className={`border-2 border-dashed rounded-2xl p-12 transition-colors ${dragging ? "border-black bg-gray-50" : "border-gray-300"
+            }`}
         >
           <div className="mb-4">
             <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">

@@ -60,7 +60,7 @@ export default function SkillsModal({ isOpen, onClose }) {
   const fetchSkills = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/skills");
+      const res = await fetch("http://127.0.0.1:8891/api/skills");
       const data = await res.json();
       if (data.ok) setSkills(data.skills || []);
       else showToast("Failed to load skills", "error");
@@ -75,7 +75,7 @@ export default function SkillsModal({ isOpen, onClose }) {
     setHubLoading(true);
     setHubSearched(false);
     try {
-      const res = await fetch(`/api/skills/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`http://127.0.0.1:8891/api/skills/search?q=${encodeURIComponent(query)}`);
       const data = await res.json();
       if (data.ok) {
         setHubResults(data.results || []);
@@ -98,7 +98,7 @@ export default function SkillsModal({ isOpen, onClose }) {
   const handleInstall = async (skillSlug) => {
     setInstallingSkill(prev => ({ ...prev, [skillSlug]: true }));
     try {
-      const res = await fetch("/api/skills/install", {
+      const res = await fetch("http://127.0.0.1:8891/api/skills/install", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ skillName: skillSlug }),
@@ -121,7 +121,7 @@ export default function SkillsModal({ isOpen, onClose }) {
   const handleUpdate = async (skillName) => {
     setUpdatingSkill(prev => ({ ...prev, [skillName]: true }));
     try {
-      const res = await fetch("/api/skills/update", {
+      const res = await fetch("http://127.0.0.1:8891/api/skills/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ skillName }),
@@ -145,7 +145,7 @@ export default function SkillsModal({ isOpen, onClose }) {
   };
 
   const handleToggle = async (skill) => {
-    const endpoint = skill.disabled ? "/api/skills/enable" : "/api/skills/disable";
+    const endpoint = skill.disabled ? "http://127.0.0.1:8891/api/skills/enable" : "http://127.0.0.1:8891/api/skills/disable";
     const action = skill.disabled ? "enabling" : "disabling";
     setActionLoading(prev => ({ ...prev, [skill.name]: action }));
     try {
@@ -224,21 +224,19 @@ export default function SkillsModal({ isOpen, onClose }) {
         <div className="flex px-5 gap-1 pb-3 border-b border-gray-100">
           <button
             onClick={() => setActiveTab("installed")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              activeTab === "installed"
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeTab === "installed"
                 ? "bg-black text-white"
                 : "text-gray-500 hover:bg-gray-100"
-            }`}
+              }`}
           >
             Installed
           </button>
           <button
             onClick={() => setActiveTab("discover")}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
-              activeTab === "discover"
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${activeTab === "discover"
                 ? "bg-black text-white"
                 : "text-gray-500 hover:bg-gray-100"
-            }`}
+              }`}
           >
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -274,11 +272,10 @@ export default function SkillsModal({ isOpen, onClose }) {
                   <button
                     key={f.key}
                     onClick={() => setFilter(f.key)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                      filter === f.key
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filter === f.key
                         ? "bg-black text-white"
                         : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                    }`}
+                      }`}
                   >
                     {f.label} <span className="opacity-60 ml-0.5">{counts[f.key]}</span>
                   </button>
@@ -315,9 +312,8 @@ export default function SkillsModal({ isOpen, onClose }) {
                     return (
                       <div key={skill.name}
                         className="flex items-start gap-3 px-3 py-3 rounded-xl hover:bg-gray-50 transition-colors">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 mt-0.5 ${
-                          skill.eligible ? "bg-gray-100" : "bg-gray-50"
-                        }`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 mt-0.5 ${skill.eligible ? "bg-gray-100" : "bg-gray-50"
+                          }`}>
                           {skill.emoji}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -347,36 +343,7 @@ export default function SkillsModal({ isOpen, onClose }) {
                             </div>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 shrink-0 mt-1">
-                          {/* Update button */}
-                          <button
-                            onClick={() => handleUpdate(skill.name)}
-                            disabled={!!isUpdating}
-                            title="Update to latest"
-                            className="w-6 h-6 flex items-center justify-center rounded-md text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40"
-                          >
-                            {isUpdating ? (
-                              <div className="w-3 h-3 border border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-                            ) : (
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                              </svg>
-                            )}
-                          </button>
-                          {/* Toggle */}
-                          <button
-                            onClick={() => handleToggle(skill)}
-                            disabled={!!action}
-                            title={isEnabled ? "Disable skill" : "Enable skill"}
-                            className={`w-10 h-6 rounded-full transition-colors relative disabled:opacity-50 ${
-                              isEnabled ? "bg-black" : "bg-gray-200"
-                            }`}
-                          >
-                            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${
-                              isEnabled ? "translate-x-5" : "translate-x-1"
-                            }`} />
-                          </button>
-                        </div>
+
                       </div>
                     );
                   })}
@@ -504,13 +471,12 @@ export default function SkillsModal({ isOpen, onClose }) {
                         <button
                           onClick={() => !isInstalled && handleInstall(slug)}
                           disabled={!!isInstalling || isInstalled}
-                          className={`shrink-0 mt-0.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
-                            isInstalled
+                          className={`shrink-0 mt-0.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${isInstalled
                               ? "bg-gray-100 text-gray-400 cursor-default"
                               : isInstalling
-                              ? "bg-gray-100 text-gray-400"
-                              : "bg-black text-white hover:bg-gray-800 active:scale-95"
-                          }`}
+                                ? "bg-gray-100 text-gray-400"
+                                : "bg-black text-white hover:bg-gray-800 active:scale-95"
+                            }`}
                         >
                           {isInstalling ? (
                             <>
@@ -559,9 +525,8 @@ export default function SkillsModal({ isOpen, onClose }) {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg z-60 whitespace-nowrap ${
-          toast.type === "error" ? "bg-red-500 text-white" : "bg-gray-900 text-white"
-        }`}>
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg z-60 whitespace-nowrap ${toast.type === "error" ? "bg-red-500 text-white" : "bg-gray-900 text-white"
+          }`}>
           {toast.message}
         </div>
       )}

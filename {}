@@ -1,0 +1,17 @@
+[2] [eval]:1
+[2] setTimeout(()=,3000)
+[2]             ^
+[2] Parenthesized expression cannot be empty
+[2] 
+[2] SyntaxError: Unexpected token ')'
+[2]     at makeContextifyScript (node:internal/vm:194:14)
+[2]     at compileScript (node:internal/process/execution:388:10)
+[2]     at evalTypeScript (node:internal/process/execution:260:22)
+[2]     at node:internal/main/eval_string:71:3
+[2] 
+[2] Node.js v24.14.0
+[2] node -e "setTimeout(()=,3000)" && electron . exited with code 1
+--> Sending SIGTERM to other processes..
+[1] cd client && npm run dev exited with code 1
+--> Sending SIGTERM to other processes..
+[0] cd server && node index.js exited with code 1

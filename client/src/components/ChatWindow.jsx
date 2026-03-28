@@ -60,7 +60,7 @@ export default function ChatWindow({ config }) {
     setSessionMessages((prev) => ({ ...prev, [activeSession]: messages }));
     setHistoryLoading(true);
     try {
-      const res = await fetch(`/api/openclaw/sessions/${encodeURIComponent(session.key)}/history`);
+      const res = await fetch(`http://127.0.0.1:8891/api/openclaw/sessions/${encodeURIComponent(session.key)}/history`);
       const data = await res.json();
       if (data.ok && data.messages) {
         loadMessages(data.messages);

@@ -195,8 +195,10 @@ async function chatViaGatewayCLI(message, sessionId) {
       const paramsStr = JSON.stringify(params);
       console.log("[cli-gateway] calling:", method, paramsStr.slice(0, 100));
 
-      const proc = spawn(process.execPath, [
-        openclawJs,
+      let bin;
+      try { bin = findBin("openclaw"); } catch(e) { return reject(e); }
+
+      const proc = spawn(bin, [
         "gateway", "call", method,
         "--params", paramsStr,
         "--token", token,
@@ -204,7 +206,7 @@ async function chatViaGatewayCLI(message, sessionId) {
         "--json",
         "--timeout", "60000"
       ], {
-        shell: false,
+        shell: true, // required for Windows .cmd
         env: { ...process.env, NO_COLOR: "1" }
       });
 
@@ -637,14 +639,13 @@ function startListening() {
 
 // --- Skills Management ---
 
-const getOpenclawJs = () => path.join(
-  os.homedir(), "AppData", "Roaming", "npm", "node_modules", "openclaw", "dist", "index.js"
-);
-
 const runOpenclawJs = (args) => new Promise((resolve, reject) => {
   const { spawn } = require("child_process");
-  const proc = spawn(process.execPath, [getOpenclawJs(), ...args], {
-    shell: false,
+  let bin;
+  try { bin = findBin("openclaw"); } catch(e) { return reject(e); }
+
+  const proc = spawn(bin, args, {
+    shell: true, // required for Windows .cmd
     env: { ...process.env, NO_COLOR: "1", CI: "1" }
   });
   let stdout = "", stderr = "";

@@ -17,7 +17,7 @@ export default function useChat(sessionId) {
 
     try {
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
-      const res = await fetch("/api/chat", {
+      const res = await fetch("http://127.0.0.1:8891/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, history, sessionId: sessionIdRef.current }), // ✅

@@ -5,7 +5,7 @@
   "description": "Bolofy Desktop App — OpenClaw powered AI chat",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "concurrently --kill-others \"cd server && node index.js\" \"cd client && npm run dev\" \"sleep 3 && electron .\"",
+    "dev": "concurrently --kill-others \"cd server && node index.js\" \"cd client && npm run dev\" \"node delay.js && electron .\"",
     "build:client": "cd client && npm run build",
     "build": "npm run build:client",
     "start": "npm run build:client && node server/index.js",

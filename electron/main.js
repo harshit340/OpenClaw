@@ -12,10 +12,12 @@ const SERVER_PORT = 8891;
 app.setName("Bolofy");
 
 function startServer() {
-  // In packaged app, server is in app.asar.unpacked; in dev, it's relative
   let serverPath = path.join(__dirname, "..", "server", "index.js");
+  let nodePath = path.join(__dirname, "..", "node_modules");
+
   if (!isDev) {
     serverPath = serverPath.replace("app.asar", "app.asar.unpacked");
+    nodePath = nodePath.replace("app.asar", "app.asar.unpacked");
   }
 
   serverProcess = spawn(process.execPath, [serverPath], {
@@ -23,7 +25,7 @@ function startServer() {
       ...process.env,
       PORT: SERVER_PORT,
       ELECTRON_RUN_AS_NODE: "1",
-      NODE_PATH: path.join(__dirname, "..", "node_modules"),
+      NODE_PATH: nodePath,
     },
     stdio: ["pipe", "pipe", "pipe"],
   });

@@ -9,7 +9,7 @@ export default function ConfigImport({ onImported }) {
     setImporting(true);
     setError(null);
     try {
-      const res = await fetch("/api/config/import", {
+      const res = await fetch("http://127.0.0.1:8891/api/config/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(config),

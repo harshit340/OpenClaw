@@ -13,7 +13,7 @@ export default function ConnectionTest({ config, onSuccess }) {
     setError(null);
 
     try {
-      const res = await fetch("/api/openclaw/start", { method: "POST" });
+      const res = await fetch("http://127.0.0.1:8891/api/openclaw/start", { method: "POST" });
       const data = await res.json();
 
       if (data.status === "started" || data.status === "already_running") {
@@ -41,7 +41,7 @@ export default function ConnectionTest({ config, onSuccess }) {
     // Test 1: Gateway connectivity
     let gatewayOk = false;
     try {
-      const res = await fetch("/api/openclaw/health");
+      const res = await fetch("http://127.0.0.1:8891/api/openclaw/health");
       const data = await res.json();
       if (data.status === "ok") {
         setGatewayStatus("pass");
@@ -64,7 +64,7 @@ export default function ConnectionTest({ config, onSuccess }) {
     setStatusText("Checking OpenClaw CLI...");
     setChatStatus("testing");
     try {
-      const res = await fetch("/api/openclaw/cli-check");
+      const res = await fetch("http://127.0.0.1:8891/api/openclaw/cli-check");
       const data = await res.json();
       if (data.status === "ok") {
         setChatStatus("pass");

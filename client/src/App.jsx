@@ -9,7 +9,7 @@ export default function App() {
 
   const fetchConfig = async () => {
     try {
-      const res = await fetch("/api/config");
+      const res = await fetch("http://127.0.0.1:8891/api/config");
       const data = await res.json();
       if (data.loaded) {
         setConfig(data);

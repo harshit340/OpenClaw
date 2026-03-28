@@ -8,7 +8,7 @@ export default function Sidebar({ sessions, activeSession, onSelect, onNew, isOp
   useEffect(() => {
     if (!isOpen) return;
     setHistoryLoading(true);
-    fetch("/api/openclaw/sessions")
+    fetch("http://127.0.0.1:8891/api/openclaw/sessions")
       .then((r) => r.json())
       .then((data) => {
         if (data.ok && data.sessions) {

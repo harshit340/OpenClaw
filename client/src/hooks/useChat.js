@@ -1,10 +1,14 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 export default function useChat(sessionId) {  
   const [messages, setMessages] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const sessionIdRef = useRef(sessionId || crypto.randomUUID()); // ✅ use it here
   const abortRef = useRef(null);
+
+  useEffect(() => {
+    if (sessionId) sessionIdRef.current = sessionId;
+  }, [sessionId]);
 
   const sendMessage = useCallback(async (text) => {
     const userMsg = { role: "user", content: text };

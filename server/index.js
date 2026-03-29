@@ -9,7 +9,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const { execSync, spawn } = require("child_process");
-require("dotenv").config();
+try { require("dotenv").config(); } catch { /* dotenv optional */ }
 
 // ─────────────────────────────────────────────
 // ENV CONFIG  (works for both local and prod)

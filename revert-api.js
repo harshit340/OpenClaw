@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const dir = path.join(__dirname, 'client', 'src');
-const TARGET_URL = 'https://openclaw-j5xo.onrender.com/api/';
+const TARGET_URL = 'https://openclaw-2-j9dp.onrender.com/api/';
 
 function walk(directory) {
   const files = fs.readdirSync(directory);

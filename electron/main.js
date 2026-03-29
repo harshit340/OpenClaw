@@ -13,12 +13,19 @@ app.setName("Bolofy");
 
 function startServer() {
   let serverPath = path.join(__dirname, "..", "server", "index.js");
-  let nodePath = path.join(__dirname, "..", "node_modules");
+  let rootNodeModules = path.join(__dirname, "..", "node_modules");
+  let serverNodeModules = path.join(__dirname, "..", "server", "node_modules");
 
   if (!isDev) {
     serverPath = serverPath.replace("app.asar", "app.asar.unpacked");
-    nodePath = nodePath.replace("app.asar", "app.asar.unpacked");
+    rootNodeModules = rootNodeModules.replace("app.asar", "app.asar.unpacked");
+    serverNodeModules = serverNodeModules.replace("app.asar", "app.asar.unpacked");
   }
+
+  const nodePath = [serverNodeModules, rootNodeModules].join(path.delimiter);
+
+  console.log("[main] starting server:", serverPath);
+  console.log("[main] NODE_PATH:", nodePath);
 
   serverProcess = spawn(process.execPath, [serverPath], {
     env: {
